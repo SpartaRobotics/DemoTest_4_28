@@ -4,7 +4,7 @@
 #include<opencv2/imgproc/imgproc.hpp>
 #include <iostream>
 #include <armadillo>
-#include "UsbMX.h"
+#include "JetsonMX28.h"
 #include "JHPWMPCA9685.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +12,7 @@
 #include <termios.h>
 #include <time.h>
 #include <math.h>
+#include <unistd.h>
 
 // One (and only one) of your C++ files must define CVUI_IMPLEMENTATION
 // before the inclusion of cvui.h to ensure its implementaiton is compiled.
@@ -59,29 +60,26 @@ using namespace std;
 using namespace cv;
 using namespace arma;
 
-// Video Devices
-VideoCapture baseCam;
-cv::Mat frame;
-char quit;
-
-// Control Variables
 double getSgn(double x);
 mat sixDofJ(cube Abi);
 cube getAbe(vec q);
 vec rad2enc(mat q);
 cube getAbeach(vec q);
 
-// Control functions
 double Rbe_IN[9] = {0.0, 1.0 , 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, -1.0};
 double q0_IN[6] = {0.1, 0.78, 0.0, 0.78, 0.78, 1.57};
 int controlPos_OUT[6] = {0, 0, 0, 0, 0, 0};
 double q_OUT[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
+VideoCapture baseCam;
+cv::Mat baseFrame;
+cv::Mat frame;
+char quit;
 
-void displayGUI(UsbMX *control, int *servoThres, int *servoCon, 
-				int *servoReadPos, int *moveStatus, int *baseCoords,
-				int *clawCoords, int *controlPos);
-void toggleServo(UsbMX *control, int servoId, int *status, int posX, int posY);
+void displayGUI(JetsonMX28 *control, int *servoThres, int *servoCon, 
+				int *servoReadPos, int *moveStatus, int *cameraStatus, 
+				int *baseCoords, int *clawCoords, int *controlPos);
+void toggleServo(JetsonMX28 *control, int servoId, int *status, int posX, int posY);
 int getkey();
 int map ( int x, int in_min, int in_max, int out_min, int out_max);
 void drControl(double *obe_IN, double *Rbe_IN, double *q0_IN, int *controlPos_OUT, double *q_OUT);
@@ -97,36 +95,21 @@ int main(int argc, const char *argv[])
 	// Position values for each servo
 	int servoThres[7] = {ID1_RST,ID2_RST,ID3_RST,ID4_RST,
 					     ID5_RST,ID6_RST,CLW_OPN};
-	
 	// Position for executing concurrent arm configuration
 	int servoCon[6] = {ID1_RST,ID2_RST,ID3_RST,ID4_RST,
 					   ID5_RST,ID6_RST};
-	
 	// Read positions from servos
 	int servoReadPos[6];
-	
 	// Positions from control algorithm
 	int controlPos[6] = {0,0,0,0,0,0};
-	
 	// Indicates if the servos will move
 	int moveStatus[6] = {0,0,0,0,0,0};
-	
+	// Indicates if camera is on or off
+	int cameraStatus[2] = {0,0};
 	// Stores Base camera cartesian coordinates
 	int baseCoords[3] = {0,0,0};
-	
 	// Stores Claw camera cartesian coordinates
 	int clawCoords[3] = {0,0,0};
-	
-	
-	//VideoCapture clawCam;
-	//clawCam.open(0);
-	//cv::Mat clawFrame;
-	
-	/*
-	baseCam.open(1);
-	Mat baseFrame;
-	*/
-	cv::Mat currentFrame;
 	
 	PCA9685 *pca9685 = new PCA9685() ;
     err = pca9685->openPCA9685();
@@ -138,8 +121,8 @@ int main(int argc, const char *argv[])
         pca9685->setPWMFrequency(60);
     }
 
-	UsbMX control;
-	control.begin("/dev/ttyUSB0", BAUD_RATE);
+	JetsonMX28 control;
+	control.begin("/dev/ttyTHS0", B115200, 166);
 
 	// Init cvui and tell it to create a OpenCV window, i.e. cv::namedWindow(WINDOW_NAME).
 	cvui::init(WINDOW_NAME);
@@ -147,8 +130,9 @@ int main(int argc, const char *argv[])
 	while (true) {
 		
 		displayGUI(&control, servoThres, servoCon, servoReadPos, 
-				   moveStatus, baseCoords, clawCoords, controlPos);
+				   moveStatus, cameraStatus, baseCoords, clawCoords, controlPos);
 		
+		// Read and write servos to current positions
 		for(int i = 0; i < 6; i++)
 		{
 			servoReadPos[i] = control.readPosition(i+1);
@@ -159,8 +143,15 @@ int main(int argc, const char *argv[])
 			}
 		}
 		
+		// EE Servo
 		pca9685->setPWM(0,0,servoThres[6]);
         pca9685->setPWM(1,0,servoThres[6]);
+        
+        if(cameraStatus[0])
+        {
+			baseCam.read(baseFrame);
+			cv::imshow("BASE", baseFrame);
+		}
         
 		// Check if ESC key was pressed
 		c = cv::waitKey(33);
@@ -180,9 +171,9 @@ int main(int argc, const char *argv[])
 /****************************GUI*************************************/
 
 
-void displayGUI(UsbMX *control, int *servoThres, int *servoCon, 
-				int *servoReadPos, int *moveStatus, int *baseCoords,
-				int *clawCoords, int *controlPos)
+void displayGUI(JetsonMX28 *control, int *servoThres, int *servoCon, 
+				int *servoReadPos, int *moveStatus, int *cameraStatus, 
+				int *baseCoords, int *clawCoords, int *controlPos)
 {
 	
 /*************************** WINDOW SETUP *****************************/
@@ -249,7 +240,19 @@ void displayGUI(UsbMX *control, int *servoThres, int *servoCon,
 /*********************** MACHINE VISION FEATURES **********************/
 	if (cvui::button(frame, 880, 40, "TOGGLE BASE CAM")) {
 		
-		baseCam.open(1)
+		if(cameraStatus[0])
+		{
+			destroyWindow("BASE");
+			baseCam.release();
+			baseFrame.release();
+			cameraStatus[0] = 0;
+		}
+		else
+		{
+			baseCam.open(BASECAM);
+			namedWindow("BASE",CV_WINDOW_AUTOSIZE);
+			cameraStatus[0] = 1;
+		}
 	}
 	
 	if (cvui::button(frame, 1070, 40, "TOGGLE CLAW CAM")) {
@@ -439,7 +442,7 @@ void displayGUI(UsbMX *control, int *servoThres, int *servoCon,
 }
 
 /********************* TOGGLE SERVOS ON/OFF **************************/
-void toggleServo(UsbMX *control, int servoId, int *status, int posX, int posY)
+void toggleServo(JetsonMX28 *control, int servoId, int *status, int posX, int posY)
 {
 	if(*status)
 	{

@@ -88,7 +88,7 @@ int UsbMX::reset(unsigned char ID)
 	count = write(uart0_filestream, &tx_buffer, 6);
 	if (count < 0)
 	{
-		////printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -116,7 +116,7 @@ int UsbMX::ping(unsigned char ID)
 	count = write(uart0_filestream, &tx_buffer, 5);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -147,7 +147,7 @@ int UsbMX::setID(unsigned char ID, unsigned char newID)
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -180,7 +180,7 @@ int UsbMX::setBD(unsigned char ID, long baud)
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -216,7 +216,7 @@ int UsbMX::move(unsigned char ID, int Position)
 	count = write(uart0_filestream, &tx_buffer, 9);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -256,7 +256,7 @@ int UsbMX::moveSpeed(unsigned char ID, int Position, int Speed)
 	count = write(uart0_filestream, &tx_buffer, 11);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -317,7 +317,7 @@ int UsbMX::setEndless(unsigned char ID,bool Status)
 	    count = write(uart0_filestream, &tx_buffer, 11);
 	    if (count < 0)
 	    {
-		    //printf("UART TX error\n");
+		    printf("UART TX error\n");
 	    }
 	
 	    usleep(TX_DELAY_TIME);
@@ -349,7 +349,7 @@ int UsbMX::setEndless(unsigned char ID,bool Status)
 	    count = write(uart0_filestream, &tx_buffer, 9);
 	    if (count < 0)
 	    {
-		    //printf("UART TX error\n");
+		    printf("UART TX error\n");
 	    }
 	
 	    usleep(TX_DELAY_TIME);
@@ -387,7 +387,7 @@ int UsbMX::turn(unsigned char ID, bool SIDE, int Speed)
 	    count = write(uart0_filestream, &tx_buffer, 9);
 	    if (count < 0)
 	    {
-		    //printf("UART TX error\n");
+		    printf("UART TX error\n");
 	    }
 	
 	    usleep(TX_DELAY_TIME);
@@ -456,7 +456,7 @@ int UsbMX::moveRW(unsigned char ID, int Position)
 	count = write(uart0_filestream, &tx_buffer, 9);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -497,7 +497,7 @@ int UsbMX::moveSpeedRW(unsigned char ID, int Position, int Speed)
 	count = write(uart0_filestream, &tx_buffer, 11);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -523,7 +523,7 @@ void UsbMX::action()
 	count = write(uart0_filestream, &tx_buffer, 6);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -551,7 +551,7 @@ int UsbMX::torqueStatus( unsigned char ID, bool Status)
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -581,7 +581,7 @@ int UsbMX::ledStatus( unsigned char ID, bool Status)
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -611,7 +611,7 @@ int UsbMX::setTempLimit(unsigned char ID, unsigned char Temperature)
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -642,7 +642,7 @@ int UsbMX::setVoltageLimit(unsigned char ID, unsigned char DVoltage, unsigned ch
 	count = write(uart0_filestream, &tx_buffer, 9);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -682,7 +682,7 @@ int UsbMX::setAngleLimit(unsigned char ID, int CWLimit, int CCWLimit)
 	count = write(uart0_filestream, &tx_buffer, 12);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -717,7 +717,7 @@ int UsbMX::setMaxTorque(unsigned char ID, int MaxTorque)
 	count = write(uart0_filestream, &tx_buffer, 9);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -747,7 +747,7 @@ int UsbMX::setSRL(unsigned char ID, unsigned char SRL)
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -777,7 +777,7 @@ int UsbMX::setRDT(unsigned char ID, unsigned char RDT)
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -807,7 +807,7 @@ int UsbMX::setLEDAlarm(unsigned char ID, unsigned char LEDAlarm)
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -837,7 +837,7 @@ int UsbMX::setShutdownAlarm(unsigned char ID, unsigned char SALARM)
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -869,7 +869,7 @@ int UsbMX::setCMargin(unsigned char ID, unsigned char CWCMargin, unsigned char C
 	count = write(uart0_filestream, &tx_buffer, 10);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -901,7 +901,7 @@ int UsbMX::setCSlope(unsigned char ID, unsigned char CWCSlope, unsigned char CCW
 	count = write(uart0_filestream, &tx_buffer, 10);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -937,7 +937,7 @@ int UsbMX::setPunch(unsigned char ID, int Punch)
 	count = write(uart0_filestream, &tx_buffer, 9);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -967,7 +967,7 @@ int UsbMX::moving(unsigned char ID)
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -993,7 +993,7 @@ int UsbMX::moving(unsigned char ID)
 #endif	
 	if(Read_Byte < 0)
 	{
-        //printf("ERROR! NOTHING READ!\n");
+        printf("ERROR! NOTHING READ!\n");
         return -1;
     }
     else
@@ -1038,7 +1038,7 @@ int UsbMX::lockRegister(unsigned char ID)
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -1068,7 +1068,7 @@ int UsbMX::RWStatus(unsigned char ID)
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -1092,7 +1092,7 @@ int UsbMX::RWStatus(unsigned char ID)
 #endif	
 	if(Read_Byte < 0)
 	{
-        //printf("ERROR! NOTHING READ!\n");
+        printf("ERROR! NOTHING READ!\n");
         return -1;
     }
     else
@@ -1140,7 +1140,7 @@ int UsbMX::readTemperature(unsigned char ID)
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -1165,7 +1165,7 @@ int UsbMX::readTemperature(unsigned char ID)
 #endif	
 	if(Read_Byte < 0)
 	{
-        //printf("ERROR! NOTHING READ!\n");
+        printf("ERROR! NOTHING READ!\n");
         return -1;
     }
     else
@@ -1213,7 +1213,7 @@ int UsbMX::readVoltage(unsigned char ID)
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -1238,7 +1238,7 @@ int UsbMX::readVoltage(unsigned char ID)
 #endif	
 	if(Read_Byte < 0)
 	{
-        //printf("ERROR! NOTHING READ!\n");
+        printf("ERROR! NOTHING READ!\n");
         return -1;
     }
     else
@@ -1286,7 +1286,7 @@ int UsbMX::readPosition(unsigned char ID)
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -1314,7 +1314,7 @@ int UsbMX::readPosition(unsigned char ID)
 #endif	
 	if(Read_Byte < 0)
 	{
-        //printf("ERROR! NOTHING READ!\n");
+        printf("ERROR! NOTHING READ!\n");
         return -1;
     }
     else
@@ -1362,7 +1362,7 @@ int UsbMX::readSpeed(unsigned char ID)
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -1387,7 +1387,7 @@ int UsbMX::readSpeed(unsigned char ID)
 #endif	
 	if(Read_Byte < 0)
 	{
-        //printf("ERROR! NOTHING READ!\n");
+        printf("ERROR! NOTHING READ!\n");
         return -1;
     }
     else
@@ -1435,7 +1435,7 @@ int UsbMX::readLoad(unsigned char ID)
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
@@ -1460,7 +1460,7 @@ int UsbMX::readLoad(unsigned char ID)
 #endif	
 	if(Read_Byte < 0)
 	{
-        //printf("ERROR! NOTHING READ!\n");
+        printf("ERROR! NOTHING READ!\n");
         return -1;
     }
     else
