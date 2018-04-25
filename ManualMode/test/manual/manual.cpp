@@ -23,28 +23,28 @@
 #define BAUD_RATE B115200
 
 #define CLW_OPN 120 // Open Claw
-#define CLW_CLS 2000 // Close Claw
+#define CLW_CLS 420 // Close Claw
 
 #define ID1_MIN 0
-#define ID2_MIN 1100
-#define ID3_MIN 1800
-#define ID4_MIN 0
-#define ID5_MIN 600
-#define ID6_MIN 600
+#define ID2_MIN 200
+#define ID3_MIN 940
+#define ID4_MIN 515
+#define ID5_MIN 610
+#define ID6_MIN 1665
 
-#define ID1_MAX 2100
-#define ID2_MAX 3500
-#define ID3_MAX 2800
-#define ID4_MAX 3100
-#define ID5_MAX 3250
-#define ID6_MAX 3200
+#define ID1_MAX 1000
+#define ID2_MAX 1062
+#define ID3_MAX 3300
+#define ID4_MAX 3160
+#define ID5_MAX 3260
+#define ID6_MAX 3715
 
-#define ID1_RST 280
-#define ID2_RST 2400
-#define ID3_RST 2250
-#define ID4_RST 1970
-#define ID5_RST 1930
-#define ID6_RST 1920
+#define ID1_RST 314
+#define ID2_RST 795
+#define ID3_RST 2235
+#define ID4_RST 1810
+#define ID5_RST 1945
+#define ID6_RST 646
 
 #define DSPEED 5 // Default Speed
 
@@ -244,20 +244,20 @@ void displayGUI(UsbMX *control, int *servoThres, int *servoCon,
 	cvui::counter(frame, 240, 567, &servoThres[4]);
 	cvui::counter(frame, 240, 637, &servoThres[5]);
 	
-	cvui::trackbar(frame, 360, 280, 400, &servoThres[0], 0, 2100);
-	cvui::trackbar(frame, 360, 350, 400, &servoThres[1], 1300, 4000);
-	cvui::trackbar(frame, 360, 420, 400, &servoThres[2], 600, 4000);
-	cvui::trackbar(frame, 360, 490, 400, &servoThres[3], 0, 4095);
-	cvui::trackbar(frame, 360, 560, 400, &servoThres[4], 640, 3142);
-	cvui::trackbar(frame, 360, 630, 400, &servoThres[5], 665, 3140);
-	cvui::trackbar(frame, 360, 700, 400, &servoThres[6], 120, 2000);
+	cvui::trackbar(frame, 360, 155, 400, &servoThres[0], 0, 1000);
+	cvui::trackbar(frame, 360, 225, 400, &servoThres[1], 200, 1062);
+	cvui::trackbar(frame, 360, 295, 400, &servoThres[2], 940, 3300);
+	cvui::trackbar(frame, 360, 365, 400, &servoThres[3], 515, 3160);
+	cvui::trackbar(frame, 360, 435, 400, &servoThres[4], 610, 3260);
+	cvui::trackbar(frame, 360, 505, 400, &servoThres[5], 1665, 3715);
+	cvui::trackbar(frame, 360, 575, 400, &servoThres[6], 120, 420); // Claw EE
 	
-	cvui::trackbar(frame, 810, 280, 400, &servoCon[0], 0, 2100);
-	cvui::trackbar(frame, 810, 350, 400, &servoCon[1], 1300, 4000);
-	cvui::trackbar(frame, 810, 420, 400, &servoCon[2], 600, 4000);
-	cvui::trackbar(frame, 810, 490, 400, &servoCon[3], 0, 4095);
-	cvui::trackbar(frame, 810, 560, 400, &servoCon[4], 640, 3142);
-	cvui::trackbar(frame, 810, 630, 400, &servoCon[5], 665, 3140);
+	cvui::trackbar(frame, 810, 155, 400, &servoCon[0], 0, 1000);
+	cvui::trackbar(frame, 810, 225, 400, &servoCon[1], 200, 1062);
+	cvui::trackbar(frame, 810, 295, 400, &servoCon[2], 940, 3300);
+	cvui::trackbar(frame, 810, 365, 400, &servoCon[3], 515, 3160);
+	cvui::trackbar(frame, 810, 425, 400, &servoCon[4], 610, 3260);
+	cvui::trackbar(frame, 810, 505, 400, &servoCon[5], 1665, 3715);
 
 	cvui::printf(frame, 525, 15, 0.8, 0xc1c1c1, "SPARTA RM INTERFACE");
 	

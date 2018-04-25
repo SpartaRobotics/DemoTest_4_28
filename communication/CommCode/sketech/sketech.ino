@@ -3,7 +3,7 @@ int phase = 1;
 char msg;
 
 void setup() {
-  Serial3.begin(115200);
+  Serial.begin(115200);
 }
 
 void loop() {
@@ -38,16 +38,14 @@ void loop() {
   // missionePhase(sendMsg, receiveMsg, missionPhase)
 int missionPhase(int sent, char receive, int phase)
 {
-  delay(1000);
-  //Serial3.println(sent);
-  //Serial3.println(sent);
-  Serial3.write("1");
-  Serial3.println();
-  if(Serial3.available() > 0)
+  Serial.println(sent);
+  if(Serial.available() > 0)
   {
-    msg = Serial3.read();
+    msg = Serial.read();
     if(msg == receive)
         phase++;
   }
+  
+  return phase;
 }
 
