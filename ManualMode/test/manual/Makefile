@@ -5,7 +5,7 @@ LIB_DIRS =
 CC = g++
 CFLAGS = -g -Wall $(INCLUDE_DIRS) $(CDEFS) -std=c++11
 LIBS= -lrt
-CPPLIBS= -L/usr/lib -lopencv_core -lopencv_flann -lopencv_video -lopencv_imgproc -lopencv_highgui
+CPPLIBS= -L/usr/lib -lopencv_core -lopencv_flann -lopencv_video -lopencv_imgproc -lopencv_highgui -larmadillo
 
 HDIR = ../../include
 SDIR = ../../src
