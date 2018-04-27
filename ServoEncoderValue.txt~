@@ -1,0 +1,25 @@
+
+/***************MINIMUIM VALUES*****************/
+#define ID1_MIN 0
+#define ID2_MIN 200
+#define ID3_MIN 940
+#define ID4_MIN 515
+#define ID5_MIN 610
+#define ID6_MIN 1665
+
+/***************MAXIMUIM VALUES*****************/
+#define ID1_MAX 3000
+#define ID2_MAX 3100
+#define ID3_MAX 3300
+#define ID4_MAX 3160
+#define ID5_MAX 3260
+#define ID6_MAX 3715
+
+
+/***************STARTING VALUES*****************/
+#define ID1_RST 1987
+#define ID2_RST 2293
+#define ID3_RST 2235
+#define ID4_RST 1860
+#define ID5_RST 1890
+#define ID6_RST 2430

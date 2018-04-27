@@ -34,19 +34,33 @@
 #define ID5_MIN 610
 #define ID6_MIN 0
 
+<<<<<<< HEAD
 #define ID1_MAX 1000
 #define ID2_MAX 1062
+=======
+#define ID1_MAX 3000
+#define ID2_MAX 3100
+>>>>>>> 706cb78c5422c2a9df374e4e57e18fc35cef4d68
 #define ID3_MAX 3300
 #define ID4_MAX 3160
 #define ID5_MAX 3260
 #define ID6_MAX 3715
 
+<<<<<<< HEAD
 #define ID1_RST 314
 #define ID2_RST 795
 #define ID3_RST 2235
 #define ID4_RST 1810
 #define ID5_RST 1945
 #define ID6_RST 646
+=======
+#define ID1_RST 1987
+#define ID2_RST 2293
+#define ID3_RST 2235
+#define ID4_RST 1860
+#define ID5_RST 1890
+#define ID6_RST 2430
+>>>>>>> 706cb78c5422c2a9df374e4e57e18fc35cef4d68
 
 #define MOVE_OFFSET 2048 
 #define MULTI_OFFSET 6144
@@ -363,6 +377,32 @@ void displayGUI(UsbMX *control, int *servoThres, int *servoCon,
 		servoThres[6] = CLW_CLS;
 	}
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+	cvui::counter(frame, 240, 287, &servoThres[0]);
+	cvui::counter(frame, 240, 357, &servoThres[1]);
+	cvui::counter(frame, 240, 427, &servoThres[2]);
+	cvui::counter(frame, 240, 497, &servoThres[3]);
+	cvui::counter(frame, 240, 567, &servoThres[4]);
+	cvui::counter(frame, 240, 637, &servoThres[5]);
+	
+	cvui::trackbar(frame, 360, 275, 400, &servoThres[0], 0, 3000);
+	cvui::trackbar(frame, 360, 345, 400, &servoThres[1], 200, 3100);
+	cvui::trackbar(frame, 360, 415, 400, &servoThres[2], 940, 3300);
+	cvui::trackbar(frame, 360, 485, 400, &servoThres[3], 515, 3160);
+	cvui::trackbar(frame, 360, 555, 400, &servoThres[4], 610, 3260);
+	cvui::trackbar(frame, 360, 625, 400, &servoThres[5], 1665, 3715);
+	cvui::trackbar(frame, 360, 690, 400, &servoThres[6], 120, 420); // Claw EE
+	
+	cvui::trackbar(frame, 810, 275, 400, &servoCon[0], 0, 3000);
+	cvui::trackbar(frame, 810, 345, 400, &servoCon[1], 200, 3100);
+	cvui::trackbar(frame, 810, 415, 400, &servoCon[2], 940, 3300);
+	cvui::trackbar(frame, 810, 485, 400, &servoCon[3], 515, 3160);
+	cvui::trackbar(frame, 810, 555, 400, &servoCon[4], 610, 3260);
+	cvui::trackbar(frame, 810, 625, 400, &servoCon[5], 1665, 3715);
+=======
+>>>>>>> 706cb78c5422c2a9df374e4e57e18fc35cef4d68
 /******************* SINGLE (FINE) SERVO MOVEMENT *********************/
 	cvui::counter(frame, 240, 337, &servoThres[0]);
 	cvui::counter(frame, 240, 407, &servoThres[1]);
@@ -387,6 +427,10 @@ void displayGUI(UsbMX *control, int *servoThres, int *servoCon,
 	cvui::trackbar(frame, 810, 535, 400, &servoCon[3], 515, 3160);
 	cvui::trackbar(frame, 810, 605, 400, &servoCon[4], 610, 3260);
 	cvui::trackbar(frame, 810, 675, 400, &servoCon[5], 0, 3715);
+<<<<<<< HEAD
+=======
+>>>>>>> bruce/wip
+>>>>>>> 706cb78c5422c2a9df374e4e57e18fc35cef4d68
 
 	cvui::printf(frame, 525, 15, 0.8, 0xc1c1c1, "SPARTA RM INTERFACE");
 	
