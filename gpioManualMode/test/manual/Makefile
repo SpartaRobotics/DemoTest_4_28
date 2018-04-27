@@ -1,4 +1,4 @@
-# build an executable for JetsonAX12
+# build an executable for JetsonMX28
 
 INCLUDE_DIRS = -I../../include
 LIB_DIRS = 
@@ -11,7 +11,7 @@ HDIR = ../../include
 SDIR = ../../src
 ODIR = ../../src/obj
 
-LAX28 = UsbMX
+LAX28 = JetsonMX28
 LGPIO = jetsonGPIO
 LPWMD = JHPWMPCA9685
 

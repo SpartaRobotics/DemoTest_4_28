@@ -5,7 +5,7 @@ LIB_DIRS =
 CC = g++
 CFLAGS = -g -Wall $(INCLUDE_DIRS) $(CDEFS) -std=c++11
 LIBS= -lrt
-CPPLIBS= -L/usr/lib -lopencv_core -lopencv_flann -lopencv_video -lopencv_imgproc -lopencv_highgui -larmadillo
+CPPLIBS= -L/usr/lib -lopencv_core -lopencv_flann -lopencv_video -lopencv_imgproc -lopencv_highgui
 
 HDIR = ../../include
 SDIR = ../../src
@@ -15,7 +15,7 @@ LAX28 = UsbMX
 LGPIO = jetsonGPIO
 LPWMD = JHPWMPCA9685
 
-TARGET = manual
+TARGET = mission
 
 all: $(TARGET)
 

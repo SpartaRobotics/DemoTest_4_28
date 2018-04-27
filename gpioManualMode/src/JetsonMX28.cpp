@@ -24,11 +24,40 @@ ORGANIZATION: Sparta Robotics
 
 */
 
-#include "UsbMX.h"
+#include "JetsonMX28.h"
 
+void JetsonMX28::begin(const char *stream, speed_t baud, jetsonGPIO dataPin)
+{
+    // Configure GPIO
+    gpio_status = ON;
+    data = dataPin;
+    gpioExport(data);
+    gpioSetDirection(data,outputPin);
+    
+    // Configure UART
+    uart0_filestream = -1;
+    uart0_filestream = open("/dev/ttyTHS0", O_RDWR | O_NOCTTY | O_NDELAY);		//Open in non blocking read/write mode
+	if (uart0_filestream == -1)
+	{
+		//ERROR - CAN'T OPEN SERIAL PORT
+		printf("Error - Unable to open UART.  Ensure it is not in use by another application\n");
+	}
+	
+	struct termios options;
+	tcgetattr(uart0_filestream, &options);
+	options.c_cflag = baud | CS8 | CLOCAL | CREAD;		//<Set baud rate
+	options.c_iflag = IGNPAR;
+	options.c_oflag = 0;
+	options.c_lflag = 0;
+	tcflush(uart0_filestream, TCIFLUSH);
+	tcsetattr(uart0_filestream, TCSANOW, &options);
+}
 
-void UsbMX::begin(const char *stream, speed_t baud)
-{    
+void JetsonMX28::begin(const char *stream, speed_t baud)
+{
+    // Configure GPIO
+    gpio_status = OFF;
+    
     uart0_filestream = open(stream, O_RDWR| O_NOCTTY );
     
     struct termios tty;
@@ -62,19 +91,22 @@ void UsbMX::begin(const char *stream, speed_t baud)
     }
 }
 
-void UsbMX::disconnect()
-{	
+void JetsonMX28::disconnect()
+{
+	if(gpio_status)
+		gpioUnexport(data);
+		
     close(uart0_filestream);
     printf("DISCONNECTED!!! \n");
 }
 
-int UsbMX::reset(unsigned char ID)
+int JetsonMX28::reset(unsigned char ID)
 {
     memset(tx_buffer, 0, sizeof(tx_buffer) );
 
 	Checksum = (~(ID + MX_RESET_LENGTH + MX_RESET))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -82,56 +114,50 @@ int UsbMX::reset(unsigned char ID)
     tx_buffer[4] = MX_RESET;
     tx_buffer[5] = Checksum;
     
-    usleep(10000);
-    tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 6);
 	if (count < 0)
 	{
-		////printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::ping(unsigned char ID)
+int JetsonMX28::ping(unsigned char ID)
 {
     memset(tx_buffer, 0, sizeof(tx_buffer) );
 
 	Checksum = (~(ID + MX_READ_DATA + MX_PING))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
     tx_buffer[3] = MX_PING;
     tx_buffer[4] = Checksum;
     
-    usleep(10000);
-    tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 5);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::setID(unsigned char ID, unsigned char newID)
+int JetsonMX28::setID(unsigned char ID, unsigned char newID)
 {
     memset(tx_buffer, 0, sizeof(tx_buffer) );
 
 	Checksum = (~(ID + MX_ID_LENGTH + MX_WRITE_DATA + MX_ID + newID))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -141,22 +167,19 @@ int UsbMX::setID(unsigned char ID, unsigned char newID)
     tx_buffer[6] = newID;
     tx_buffer[7] = Checksum;
     
-    usleep(10000);
-    tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::setBD(unsigned char ID, long baud)
+int JetsonMX28::setBD(unsigned char ID, long baud)
 {
     unsigned char Baud_Rate = (2000000/baud) - 1;
     
@@ -164,7 +187,7 @@ int UsbMX::setBD(unsigned char ID, long baud)
 
 	Checksum = (~(ID + MX_BD_LENGTH + MX_WRITE_DATA + MX_BAUD_RATE + Baud_Rate))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -174,22 +197,19 @@ int UsbMX::setBD(unsigned char ID, long baud)
     tx_buffer[6] = Baud_Rate;
     tx_buffer[7] = Checksum;
     
-    usleep(10000);
-    tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::move(unsigned char ID, int Position)
+int JetsonMX28::move(unsigned char ID, int Position)
 {
     char Position_H,Position_L;
     
@@ -199,7 +219,7 @@ int UsbMX::move(unsigned char ID, int Position)
     Position_L = Position;
 	Checksum = (~(ID + MX_GOAL_LENGTH + MX_WRITE_DATA + MX_GOAL_POSITION_L + Position_L + Position_H))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -210,22 +230,19 @@ int UsbMX::move(unsigned char ID, int Position)
     tx_buffer[7] = Position_H;
     tx_buffer[8] = Checksum;
     
-    usleep(10000);
-    tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 9);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::moveSpeed(unsigned char ID, int Position, int Speed)
+int JetsonMX28::moveSpeed(unsigned char ID, int Position, int Speed)
 {
     char Position_H,Position_L,Speed_H,Speed_L;
     
@@ -237,7 +254,7 @@ int UsbMX::moveSpeed(unsigned char ID, int Position, int Speed)
     Speed_L = Speed;
 	Checksum = (~(ID + MX_GOAL_SP_LENGTH + MX_WRITE_DATA + MX_GOAL_POSITION_L + Position_L + Position_H + Speed_L + Speed_H))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -250,22 +267,19 @@ int UsbMX::moveSpeed(unsigned char ID, int Position, int Speed)
     tx_buffer[9] = Speed_H;
     tx_buffer[10] = Checksum;
     
-    usleep(10000);
-    tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 11);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::moveDeg(unsigned char ID, int Degrees)
+int JetsonMX28::moveDeg(unsigned char ID, int Degrees)
 {
 	int Position;
 	
@@ -277,7 +291,7 @@ int UsbMX::moveDeg(unsigned char ID, int Degrees)
 	return 0;
 }
 
-int UsbMX::moveSpeedDeg(unsigned char ID, int Degrees, int Speed)
+int JetsonMX28::moveSpeedDeg(unsigned char ID, int Degrees, int Speed)
 {
 	int Position;
 	
@@ -289,16 +303,16 @@ int UsbMX::moveSpeedDeg(unsigned char ID, int Degrees, int Speed)
 	return 0;
 }
 
-int UsbMX::setEndless(unsigned char ID,bool Status)
+int JetsonMX28::setEndless(unsigned char ID,bool Status)
 {
 
-    if ( Status == 1) {	// for continous mode
+    if ( Status ) {	// for continous mode
 	    char MX_CCW_AL_LT = 0;
 	    Checksum = (~(ID + MX_GOAL_LENGTH + MX_WRITE_DATA + MX_CCW_ANGLE_LIMIT_L))&0xFF;
     
         memset(tx_buffer, 0, sizeof(tx_buffer) );
         
-	    
+	    TRANSMIT_ON(gpio_status);
         tx_buffer[0] = MX_START;
         tx_buffer[1] = MX_START;
         tx_buffer[2] = ID;
@@ -311,17 +325,14 @@ int UsbMX::setEndless(unsigned char ID,bool Status)
         tx_buffer[9] = MX_CCW_AL_LT;
         tx_buffer[10]= Checksum;
         
-        usleep(10000);
-        tcflush(uart0_filestream, TCIOFLUSH);
-        
 	    count = write(uart0_filestream, &tx_buffer, 11);
 	    if (count < 0)
 	    {
-		    //printf("UART TX error\n");
+		    printf("UART TX error\n");
 	    }
 	
 	    usleep(TX_DELAY_TIME);
-	    
+	    TRANSMIT_OFF(gpio_status);
 
         return 0;
     
@@ -333,6 +344,8 @@ int UsbMX::setEndless(unsigned char ID,bool Status)
     
         memset(tx_buffer, 0, sizeof(tx_buffer) );
         
+	    TRANSMIT_ON(gpio_status);
+
         tx_buffer[0] = MX_START;
         tx_buffer[1] = MX_START;
         tx_buffer[2] = ID;
@@ -343,25 +356,20 @@ int UsbMX::setEndless(unsigned char ID,bool Status)
         tx_buffer[7] = MX_CCW_AL_H;
         tx_buffer[8] = Checksum;
         
-        usleep(10000);
-        tcflush(uart0_filestream, TCIOFLUSH);
-        
 	    count = write(uart0_filestream, &tx_buffer, 9);
 	    if (count < 0)
 	    {
-		    //printf("UART TX error\n");
+		    printf("UART TX error\n");
 	    }
 	
 	    usleep(TX_DELAY_TIME);
-	    
+	    TRANSMIT_OFF(gpio_status);
 
         return 0;
     }
-    
-    return 0;
 }
 
-int UsbMX::turn(unsigned char ID, bool SIDE, int Speed)
+int JetsonMX28::turn(unsigned char ID, bool SIDE, int Speed)
 {
     
 	if (SIDE == 0){
@@ -370,7 +378,7 @@ int UsbMX::turn(unsigned char ID, bool SIDE, int Speed)
 		Speed_L = Speed;
 		Checksum = (~(ID + MX_SPEED_LENGTH + MX_WRITE_DATA + MX_GOAL_SPEED_L + Speed_L + Speed_H))&0xFF;
     
-	    
+	    TRANSMIT_ON(gpio_status);
         tx_buffer[0] = MX_START;
         tx_buffer[1] = MX_START;
         tx_buffer[2] = ID;
@@ -381,17 +389,14 @@ int UsbMX::turn(unsigned char ID, bool SIDE, int Speed)
         tx_buffer[7] = Speed_H;
         tx_buffer[8] = Checksum;
         
-        usleep(10000);
-		tcflush(uart0_filestream, TCIOFLUSH);
-        
 	    count = write(uart0_filestream, &tx_buffer, 9);
 	    if (count < 0)
 	    {
-		    //printf("UART TX error\n");
+		    printf("UART TX error\n");
 	    }
 	
 	    usleep(TX_DELAY_TIME);
-	    
+	    TRANSMIT_OFF(gpio_status);
 
         return 0;
 	}
@@ -402,7 +407,7 @@ int UsbMX::turn(unsigned char ID, bool SIDE, int Speed)
 		Speed_L = Speed;
 		Checksum = (~(ID + MX_SPEED_LENGTH + MX_WRITE_DATA + MX_GOAL_SPEED_L + Speed_L + Speed_H))&0xFF;
     
-	    
+	    TRANSMIT_ON(gpio_status);
         tx_buffer[0] = MX_START;
         tx_buffer[1] = MX_START;
         tx_buffer[2] = ID;
@@ -413,9 +418,6 @@ int UsbMX::turn(unsigned char ID, bool SIDE, int Speed)
         tx_buffer[7] = Speed_H;
         tx_buffer[8] = Checksum;
         
-        usleep(10000);
-		tcflush(uart0_filestream, TCIOFLUSH);
-        
 	    count = write(uart0_filestream, &tx_buffer, 9);
 	    if (count < 0)
 	    {
@@ -423,13 +425,13 @@ int UsbMX::turn(unsigned char ID, bool SIDE, int Speed)
 	    }
 	
 	    usleep(TX_DELAY_TIME);
-	    
+	    TRANSMIT_OFF(gpio_status);
 
         return 0;
 		}
 }
 
-int UsbMX::moveRW(unsigned char ID, int Position)
+int JetsonMX28::moveRW(unsigned char ID, int Position)
 {
 
     char Position_H,Position_L;
@@ -439,7 +441,7 @@ int UsbMX::moveRW(unsigned char ID, int Position)
     
     Checksum = (~(ID + MX_GOAL_LENGTH + MX_REG_WRITE + MX_GOAL_POSITION_L + Position_L + Position_H))&0xFF;
         
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -450,22 +452,19 @@ int UsbMX::moveRW(unsigned char ID, int Position)
     tx_buffer[7] = Position_H;
     tx_buffer[8] = Checksum;
     
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 9);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::moveSpeedRW(unsigned char ID, int Position, int Speed)
+int JetsonMX28::moveSpeedRW(unsigned char ID, int Position, int Speed)
 {
 
     char Position_H,Position_L,Speed_H,Speed_L;
@@ -478,7 +477,7 @@ int UsbMX::moveSpeedRW(unsigned char ID, int Position, int Speed)
     Speed_L = Speed;
 	Checksum = (~(ID + MX_GOAL_SP_LENGTH + MX_REG_WRITE + MX_GOAL_POSITION_L + Position_L + Position_H + Speed_L + Speed_H))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -491,25 +490,22 @@ int UsbMX::moveSpeedRW(unsigned char ID, int Position, int Speed)
     tx_buffer[9] = Speed_H;
     tx_buffer[10] = Checksum;
     
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 11);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-void UsbMX::action()
+void JetsonMX28::action()
 {
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = BROADCAST_ID;
@@ -517,25 +513,22 @@ void UsbMX::action()
     tx_buffer[4] = MX_ACTION;
     tx_buffer[5] = MX_ACTION_CHECKSUM;
     
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 6);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 }
 
-int UsbMX::torqueStatus( unsigned char ID, bool Status)
+int JetsonMX28::torqueStatus( unsigned char ID, bool Status)
 {
     
     Checksum = (~(ID + MX_TORQUE_LENGTH + MX_WRITE_DATA + MX_TORQUE_ENABLE + Status))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -545,27 +538,24 @@ int UsbMX::torqueStatus( unsigned char ID, bool Status)
     tx_buffer[6] = Status;
     tx_buffer[7] = Checksum;
     
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::ledStatus( unsigned char ID, bool Status)
+int JetsonMX28::ledStatus( unsigned char ID, bool Status)
 {
     
     Checksum = (~(ID + MX_LED_LENGTH + MX_WRITE_DATA + MX_LED + Status))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -575,27 +565,24 @@ int UsbMX::ledStatus( unsigned char ID, bool Status)
     tx_buffer[6] = Status;
     tx_buffer[7] = Checksum;
     
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::setTempLimit(unsigned char ID, unsigned char Temperature)
+int JetsonMX28::setTempLimit(unsigned char ID, unsigned char Temperature)
 {
     
     Checksum = (~(ID + MX_TL_LENGTH +MX_WRITE_DATA+ MX_LIMIT_TEMPERATURE + Temperature))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -605,27 +592,24 @@ int UsbMX::setTempLimit(unsigned char ID, unsigned char Temperature)
     tx_buffer[6] = Temperature;
     tx_buffer[7] = Checksum;
     
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::setVoltageLimit(unsigned char ID, unsigned char DVoltage, unsigned char UVoltage)
+int JetsonMX28::setVoltageLimit(unsigned char ID, unsigned char DVoltage, unsigned char UVoltage)
 {
     
     Checksum = (~(ID + MX_VL_LENGTH +MX_WRITE_DATA+ MX_DOWN_LIMIT_VOLTAGE + DVoltage + UVoltage))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -636,22 +620,19 @@ int UsbMX::setVoltageLimit(unsigned char ID, unsigned char DVoltage, unsigned ch
 	tx_buffer[7] = UVoltage;
     tx_buffer[8] = Checksum;
     
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 9);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::setAngleLimit(unsigned char ID, int CWLimit, int CCWLimit)
+int JetsonMX28::setAngleLimit(unsigned char ID, int CWLimit, int CCWLimit)
 {
     char CW_H,CW_L,CCW_H,CCW_L;
     
@@ -662,7 +643,7 @@ int UsbMX::setAngleLimit(unsigned char ID, int CWLimit, int CCWLimit)
     
 	Checksum = (~(ID + MX_VL_LENGTH +MX_WRITE_DATA+ MX_CW_ANGLE_LIMIT_L + CW_H + CW_L + MX_CCW_ANGLE_LIMIT_L + CCW_H + CCW_L))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -676,22 +657,19 @@ int UsbMX::setAngleLimit(unsigned char ID, int CWLimit, int CCWLimit)
     tx_buffer[10] = CCW_H;
     tx_buffer[11] = Checksum;
     
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 12);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::setMaxTorque(unsigned char ID, int MaxTorque)
+int JetsonMX28::setMaxTorque(unsigned char ID, int MaxTorque)
 {
     char MaxTorque_H,MaxTorque_L;
     
@@ -700,7 +678,7 @@ int UsbMX::setMaxTorque(unsigned char ID, int MaxTorque)
     
 	Checksum = (~(ID + MX_MT_LENGTH + MX_WRITE_DATA + MX_MAX_TORQUE_L + MaxTorque_L + MaxTorque_H))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -711,27 +689,24 @@ int UsbMX::setMaxTorque(unsigned char ID, int MaxTorque)
     tx_buffer[7] = MaxTorque_H;
     tx_buffer[8] = Checksum;
     
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 9);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::setSRL(unsigned char ID, unsigned char SRL)
+int JetsonMX28::setSRL(unsigned char ID, unsigned char SRL)
 {
     
     Checksum = (~(ID + MX_SRL_LENGTH + MX_WRITE_DATA + MX_RETURN_LEVEL + SRL))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -741,27 +716,24 @@ int UsbMX::setSRL(unsigned char ID, unsigned char SRL)
     tx_buffer[6] = SRL;
     tx_buffer[7] = Checksum;
     
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::setRDT(unsigned char ID, unsigned char RDT)
+int JetsonMX28::setRDT(unsigned char ID, unsigned char RDT)
 {
     
    Checksum = (~(ID + MX_RDT_LENGTH + MX_WRITE_DATA + MX_RETURN_DELAY_TIME + (RDT/2)))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -771,27 +743,24 @@ int UsbMX::setRDT(unsigned char ID, unsigned char RDT)
     tx_buffer[6] = RDT/2;
     tx_buffer[7] = Checksum;
     
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::setLEDAlarm(unsigned char ID, unsigned char LEDAlarm)
+int JetsonMX28::setLEDAlarm(unsigned char ID, unsigned char LEDAlarm)
 {
     
     Checksum = (~(ID + MX_LEDALARM_LENGTH + MX_WRITE_DATA + MX_ALARM_LED + LEDAlarm))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -801,27 +770,24 @@ int UsbMX::setLEDAlarm(unsigned char ID, unsigned char LEDAlarm)
     tx_buffer[6] = LEDAlarm;
     tx_buffer[7] = Checksum;
     
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::setShutdownAlarm(unsigned char ID, unsigned char SALARM)
+int JetsonMX28::setShutdownAlarm(unsigned char ID, unsigned char SALARM)
 {
     
     Checksum = (~(ID + MX_SALARM_LENGTH + MX_ALARM_SHUTDOWN + MX_ALARM_LED + SALARM))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -831,27 +797,24 @@ int UsbMX::setShutdownAlarm(unsigned char ID, unsigned char SALARM)
     tx_buffer[6] = SALARM;
     tx_buffer[7] = Checksum;
     
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::setCMargin(unsigned char ID, unsigned char CWCMargin, unsigned char CCWCMargin)
+int JetsonMX28::setCMargin(unsigned char ID, unsigned char CWCMargin, unsigned char CCWCMargin)
 {
     
     Checksum = (~(ID + MX_CM_LENGTH +MX_WRITE_DATA+ MX_CW_COMPLIANCE_MARGIN + CWCMargin + MX_CCW_COMPLIANCE_MARGIN + CCWCMargin))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -863,27 +826,24 @@ int UsbMX::setCMargin(unsigned char ID, unsigned char CWCMargin, unsigned char C
     tx_buffer[8] = CCWCMargin;
     tx_buffer[9] = Checksum;
     
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 10);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::setCSlope(unsigned char ID, unsigned char CWCSlope, unsigned char CCWCSlope)
+int JetsonMX28::setCSlope(unsigned char ID, unsigned char CWCSlope, unsigned char CCWCSlope)
 {
     
     Checksum = (~(ID + MX_CS_LENGTH +MX_WRITE_DATA+ MX_CW_COMPLIANCE_SLOPE + CWCSlope + MX_CCW_COMPLIANCE_SLOPE + CCWCSlope))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -895,22 +855,19 @@ int UsbMX::setCSlope(unsigned char ID, unsigned char CWCSlope, unsigned char CCW
     tx_buffer[8] = CCWCSlope;
     tx_buffer[9] = Checksum;
     
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 10);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::setPunch(unsigned char ID, int Punch)
+int JetsonMX28::setPunch(unsigned char ID, int Punch)
 {
 
     char Punch_H,Punch_L;
@@ -920,7 +877,7 @@ int UsbMX::setPunch(unsigned char ID, int Punch)
     
 	Checksum = (~(ID + MX_PUNCH_LENGTH + MX_WRITE_DATA + MX_PUNCH_L + Punch_L + Punch_H))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -931,58 +888,50 @@ int UsbMX::setPunch(unsigned char ID, int Punch)
     tx_buffer[7] = Punch_H;
     tx_buffer[8] = Checksum;
     
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 9);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;
 }
 
-int UsbMX::moving(unsigned char ID)
+int JetsonMX28::moving(unsigned char ID)
 {
 
-    Checksum = (~(ID + MX_MOVING_LENGTH  + MX_READ_DATA + MX_MOVING + READ_ONE_BYTE_LENGTH))&0xFF;
+    Checksum = (~(ID + MX_MOVING_LENGTH  + MX_READ_DATA + MX_MOVING + MX_BYTE_READ))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
     tx_buffer[3] = MX_MOVING_LENGTH;
     tx_buffer[4] = MX_READ_DATA;
     tx_buffer[5] = MX_MOVING;
-    tx_buffer[6] = READ_ONE_BYTE_LENGTH;
+    tx_buffer[6] = MX_BYTE_READ;
     tx_buffer[7] = Checksum;
-    
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
     
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
 	Moving_Byte = -1;
 	Time_Counter = 0;
-	
 	while((bytesToRead() < 7) & (Time_Counter < TIME_OUT))
 	{
 	    Time_Counter++;
 	    usleep(1000);
 	}
 	
-
 	Read_Byte = 0;
 	Read_Byte = read(uart0_filestream, &rx_buffer, bytesToRead() );
 #if 0
@@ -993,7 +942,7 @@ int UsbMX::moving(unsigned char ID)
 #endif	
 	if(Read_Byte < 0)
 	{
-        //printf("ERROR! NOTHING READ!\n");
+        printf("ERROR! NOTHING READ!\n");
         return -1;
     }
     else
@@ -1017,12 +966,12 @@ int UsbMX::moving(unsigned char ID)
     return Moving_Byte;
 }
 
-int UsbMX::lockRegister(unsigned char ID)
+int JetsonMX28::lockRegister(unsigned char ID)
 {
     
     Checksum = (~(ID + MX_LR_LENGTH + MX_WRITE_DATA + MX_LOCK + LOCK))&0xFF;
 
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
@@ -1032,47 +981,41 @@ int UsbMX::lockRegister(unsigned char ID)
     tx_buffer[6] = LOCK;
     tx_buffer[7] = Checksum;
     
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
-    
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     return 0;                 // Return the read error
 }
 
-int UsbMX::RWStatus(unsigned char ID)
+int JetsonMX28::RWStatus(unsigned char ID)
 {
 
-    Checksum = (~(ID + MX_RWS_LENGTH  + MX_READ_DATA + MX_REGISTERED_INSTRUCTION + READ_ONE_BYTE_LENGTH))&0xFF;
+    Checksum = (~(ID + MX_RWS_LENGTH  + MX_READ_DATA + MX_REGISTERED_INSTRUCTION + MX_BYTE_READ))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
     tx_buffer[3] = MX_RWS_LENGTH;
     tx_buffer[4] = MX_READ_DATA;
     tx_buffer[5] = MX_REGISTERED_INSTRUCTION;
-    tx_buffer[6] = READ_ONE_BYTE_LENGTH;
+    tx_buffer[6] = MX_BYTE_READ;
     tx_buffer[7] = Checksum;
-    
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
     
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
 	RWS_Byte = -1;
 	Time_Counter = 0;
@@ -1092,7 +1035,7 @@ int UsbMX::RWStatus(unsigned char ID)
 #endif	
 	if(Read_Byte < 0)
 	{
-        //printf("ERROR! NOTHING READ!\n");
+        printf("ERROR! NOTHING READ!\n");
         return -1;
     }
     else
@@ -1116,35 +1059,32 @@ int UsbMX::RWStatus(unsigned char ID)
     return RWS_Byte;
 }
 
-int UsbMX::readTemperature(unsigned char ID)
+int JetsonMX28::readTemperature(unsigned char ID)
 {
 
     memset(tx_buffer, 0, sizeof(tx_buffer) );
     memset(tx_buffer, 0, sizeof(rx_buffer) );
    
-    Checksum = (~(ID + MX_TEM_LENGTH  + MX_READ_DATA + MX_PRESENT_TEMPERATURE + READ_ONE_BYTE_LENGTH))&0xFF;
+    Checksum = (~(ID + MX_TEM_LENGTH  + MX_READ_DATA + MX_PRESENT_TEMPERATURE + MX_BYTE_READ))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
     tx_buffer[3] = MX_TEM_LENGTH;
     tx_buffer[4] = MX_READ_DATA;
     tx_buffer[5] = MX_PRESENT_TEMPERATURE;
-    tx_buffer[6] = READ_ONE_BYTE_LENGTH;
+    tx_buffer[6] = MX_BYTE_READ;
     tx_buffer[7] = Checksum;
-    
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
     
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     
 	Temperature_Byte = -1;
@@ -1165,7 +1105,7 @@ int UsbMX::readTemperature(unsigned char ID)
 #endif	
 	if(Read_Byte < 0)
 	{
-        //printf("ERROR! NOTHING READ!\n");
+        printf("ERROR! NOTHING READ!\n");
         return -1;
     }
     else
@@ -1189,35 +1129,32 @@ int UsbMX::readTemperature(unsigned char ID)
     return Temperature_Byte;
 }
 
-int UsbMX::readVoltage(unsigned char ID)
+int JetsonMX28::readVoltage(unsigned char ID)
 {
 
     memset(tx_buffer, 0, sizeof(tx_buffer) );
     memset(tx_buffer, 0, sizeof(rx_buffer) );
    
-    Checksum = (~(ID + MX_VOLT_LENGTH  + MX_READ_DATA + MX_PRESENT_VOLTAGE + READ_ONE_BYTE_LENGTH))&0xFF;
+    Checksum = (~(ID + MX_VOLT_LENGTH  + MX_READ_DATA + MX_PRESENT_VOLTAGE + MX_BYTE_READ))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
     tx_buffer[3] = MX_VOLT_LENGTH;
     tx_buffer[4] = MX_READ_DATA;
     tx_buffer[5] = MX_PRESENT_VOLTAGE;
-    tx_buffer[6] = READ_ONE_BYTE_LENGTH;
+    tx_buffer[6] = MX_BYTE_READ;
     tx_buffer[7] = Checksum;
-    
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
     
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     
 	Voltage_Byte = -1;
@@ -1238,7 +1175,7 @@ int UsbMX::readVoltage(unsigned char ID)
 #endif	
 	if(Read_Byte < 0)
 	{
-        //printf("ERROR! NOTHING READ!\n");
+        printf("ERROR! NOTHING READ!\n");
         return -1;
     }
     else
@@ -1262,50 +1199,44 @@ int UsbMX::readVoltage(unsigned char ID)
     return Voltage_Byte;
 }
 
-int UsbMX::readPosition(unsigned char ID)
+int JetsonMX28::readPosition(unsigned char ID)
 {
 
     memset(tx_buffer, 0, sizeof(tx_buffer) );
     memset(tx_buffer, 0, sizeof(rx_buffer) );
    
-    Checksum = (~(ID + MX_POS_LENGTH  + MX_READ_DATA + MX_PRESENT_POSITION_L + READ_TWO_BYTE_LENGTH))&0xFF;
+    Checksum = (~(ID + MX_POS_LENGTH  + MX_READ_DATA + MX_PRESENT_POSITION_L + MX_BYTE_READ_POS))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
     tx_buffer[3] = MX_POS_LENGTH;
     tx_buffer[4] = MX_READ_DATA;
     tx_buffer[5] = MX_PRESENT_POSITION_L;
-    tx_buffer[6] = READ_TWO_BYTE_LENGTH;
+    tx_buffer[6] = MX_BYTE_READ_POS;
     tx_buffer[7] = Checksum;
-    
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
     
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     
 	Position_Byte = -1;
 	Time_Counter = 0;
-	
 	while((bytesToRead() < 7) & (Time_Counter < TIME_OUT))
 	{
 	    Time_Counter++;
 	    usleep(1000);
 	}
 	
-	
 	Read_Byte = 0;
 	Read_Byte = read(uart0_filestream, &rx_buffer, bytesToRead() );
-	
 #if 0
     printf("STUFF(%d): ", ret);
     for(int i = 0; i < ret; i++)
@@ -1314,7 +1245,7 @@ int UsbMX::readPosition(unsigned char ID)
 #endif	
 	if(Read_Byte < 0)
 	{
-        //printf("ERROR! NOTHING READ!\n");
+        printf("ERROR! NOTHING READ!\n");
         return -1;
     }
     else
@@ -1325,7 +1256,7 @@ int UsbMX::readPosition(unsigned char ID)
             {
                 if( (Error_Byte = rx_buffer[iter+4]) != 0 )
                 {
-                    //printf("ERROR: ");
+                    printf("ERROR!\n");
                     return (Error_Byte * (-1));
                 }
                     
@@ -1338,35 +1269,32 @@ int UsbMX::readPosition(unsigned char ID)
     return Position_Byte;
 }
 
-int UsbMX::readSpeed(unsigned char ID)
+int JetsonMX28::readSpeed(unsigned char ID)
 {
 
     memset(tx_buffer, 0, sizeof(tx_buffer) );
     memset(tx_buffer, 0, sizeof(rx_buffer) );
    
-    Checksum = (~(ID + MX_POS_LENGTH  + MX_READ_DATA + MX_PRESENT_SPEED_L + READ_TWO_BYTE_LENGTH))&0xFF;
+    Checksum = (~(ID + MX_POS_LENGTH  + MX_READ_DATA + MX_PRESENT_SPEED_L + MX_BYTE_READ_POS))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
-    tx_buffer[3] = MX_SPEED_LENGTH;
+    tx_buffer[3] = MX_POS_LENGTH;
     tx_buffer[4] = MX_READ_DATA;
     tx_buffer[5] = MX_PRESENT_SPEED_L;
-    tx_buffer[6] = READ_TWO_BYTE_LENGTH;
+    tx_buffer[6] = MX_BYTE_READ_POS;
     tx_buffer[7] = Checksum;
-    
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
     
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     
 	Speed_Byte = -1;
@@ -1387,7 +1315,7 @@ int UsbMX::readSpeed(unsigned char ID)
 #endif	
 	if(Read_Byte < 0)
 	{
-        //printf("ERROR! NOTHING READ!\n");
+        printf("ERROR! NOTHING READ!\n");
         return -1;
     }
     else
@@ -1411,35 +1339,32 @@ int UsbMX::readSpeed(unsigned char ID)
     return Speed_Byte;
 }
 
-int UsbMX::readLoad(unsigned char ID)
+int JetsonMX28::readLoad(unsigned char ID)
 {
 
     memset(tx_buffer, 0, sizeof(tx_buffer) );
     memset(tx_buffer, 0, sizeof(rx_buffer) );
    
-    Checksum = (~(ID + MX_POS_LENGTH  + MX_READ_DATA + MX_PRESENT_LOAD_L + READ_TWO_BYTE_LENGTH))&0xFF;
+    Checksum = (~(ID + MX_POS_LENGTH  + MX_READ_DATA + MX_PRESENT_LOAD_L + MX_BYTE_READ_POS))&0xFF;
     
-	
+	TRANSMIT_ON(gpio_status);
     tx_buffer[0] = MX_START;
     tx_buffer[1] = MX_START;
     tx_buffer[2] = ID;
-    tx_buffer[3] = MX_LOAD_LENGTH;
+    tx_buffer[3] = MX_POS_LENGTH;
     tx_buffer[4] = MX_READ_DATA;
     tx_buffer[5] = MX_PRESENT_LOAD_L;
-    tx_buffer[6] = READ_TWO_BYTE_LENGTH;
+    tx_buffer[6] = MX_BYTE_READ_POS;
     tx_buffer[7] = Checksum;
-    
-    usleep(10000);
-	tcflush(uart0_filestream, TCIOFLUSH);
     
 	count = write(uart0_filestream, &tx_buffer, 8);
 	if (count < 0)
 	{
-		//printf("UART TX error\n");
+		printf("UART TX error\n");
 	}
 	
 	usleep(TX_DELAY_TIME);
-	
+	TRANSMIT_OFF(gpio_status);
 
     
 	Load_Byte = -1;
@@ -1460,7 +1385,7 @@ int UsbMX::readLoad(unsigned char ID)
 #endif	
 	if(Read_Byte < 0)
 	{
-        //printf("ERROR! NOTHING READ!\n");
+        printf("ERROR! NOTHING READ!\n");
         return -1;
     }
     else
@@ -1484,7 +1409,7 @@ int UsbMX::readLoad(unsigned char ID)
     return Load_Byte;
 }
 
-int UsbMX::bytesToRead()
+int JetsonMX28::bytesToRead()
 {
     int bytes = 0;
 	ioctl(uart0_filestream, FIONREAD, &bytes);
