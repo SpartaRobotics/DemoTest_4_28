@@ -11,7 +11,7 @@ HDIR = ../../include
 SDIR = ../../src
 ODIR = ../../src/obj
 
-LAX28 = JetsonMX28
+LAX28 = UsbMX
 LGPIO = jetsonGPIO
 LPWMD = JHPWMPCA9685
 

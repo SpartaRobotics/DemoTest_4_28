@@ -4,7 +4,7 @@
 #include<opencv2/imgproc/imgproc.hpp>
 #include <iostream>
 #include <armadillo>
-#include "JetsonMX28.h"
+#include "UsbMX.h"
 #include "JHPWMPCA9685.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -76,10 +76,10 @@ cv::Mat baseFrame;
 cv::Mat frame;
 char quit;
 
-void displayGUI(JetsonMX28 *control, int *servoThres, int *servoCon, 
+void displayGUI(UsbMX *control, int *servoThres, int *servoCon, 
 				int *servoReadPos, int *moveStatus, int *cameraStatus, 
 				int *baseCoords, int *clawCoords, int *controlPos);
-void toggleServo(JetsonMX28 *control, int servoId, int *status, int posX, int posY);
+void toggleServo(UsbMX *control, int servoId, int *status, int posX, int posY);
 int getkey();
 int map ( int x, int in_min, int in_max, int out_min, int out_max);
 void drControl(double *obe_IN, double *Rbe_IN, double *q0_IN, int *controlPos_OUT, double *q_OUT);
@@ -121,8 +121,8 @@ int main(int argc, const char *argv[])
         pca9685->setPWMFrequency(60);
     }
 
-	JetsonMX28 control;
-	control.begin("/dev/ttyTHS0", B115200, 166);
+	UsbMX control;
+	control.begin("/dev/ttyUSB0", B115200);
 
 	// Init cvui and tell it to create a OpenCV window, i.e. cv::namedWindow(WINDOW_NAME).
 	cvui::init(WINDOW_NAME);
@@ -171,7 +171,7 @@ int main(int argc, const char *argv[])
 /****************************GUI*************************************/
 
 
-void displayGUI(JetsonMX28 *control, int *servoThres, int *servoCon, 
+void displayGUI(UsbMX *control, int *servoThres, int *servoCon, 
 				int *servoReadPos, int *moveStatus, int *cameraStatus, 
 				int *baseCoords, int *clawCoords, int *controlPos)
 {
@@ -442,7 +442,7 @@ void displayGUI(JetsonMX28 *control, int *servoThres, int *servoCon,
 }
 
 /********************* TOGGLE SERVOS ON/OFF **************************/
-void toggleServo(JetsonMX28 *control, int servoId, int *status, int posX, int posY)
+void toggleServo(UsbMX *control, int servoId, int *status, int posX, int posY)
 {
 	if(*status)
 	{
@@ -889,12 +889,12 @@ cube getAbe(vec q)
 	mat DHTable(6,4), A6e(4,4);
 	cube Aim1_i(4,4,6), Abi(4,4,8);
 	double thet,D,A,a1,alph,L1,L2,L3,L4,L5,n,i,j;
-    L1 = 128.8;
+    L1 = 132.5;
     L2 = 65.0;
     L3 = 118.5 + 30.0;
     L4 = 118.5;
     L5 = 261.5;
-    a1 = 32; // actually 1.8573cm
+    a1 = 35; // actually 1.8573cm
     
     DHTable <<   L1   << -M_PI+q(0)      <<   0.0 << M_PI/2  << endr
 		    <<   a1   << q(1) + M_PI/2   <<   L2  << -M_PI/2 << endr 
